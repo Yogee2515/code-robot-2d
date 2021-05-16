@@ -1,0 +1,57 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+
+public class SceneLoader : MonoBehaviour
+{
+    public GameObject gameCompletedPanel;
+    private string currentLevelName;
+    public int nextSceneIndex;
+    // Start is called before the first frame update
+    void Start()
+    {
+        currentLevelName = SceneManager.GetActiveScene().name;
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+        
+    }
+
+    public void GoToMenu()
+    {
+        SceneManager.LoadScene(0);
+    }
+
+    public void StartGame()
+    {
+        SceneManager.LoadScene(1);
+    }
+
+    public void Quit()
+    {
+        Application.Quit();
+    }
+
+    void LoadNextScene()
+    {
+        SceneManager.LoadScene(nextSceneIndex);
+    }
+
+    private void OnTriggerEnter2D(Collider2D collision)
+    {
+        if (collision.CompareTag("Player"))
+        {
+            if(currentLevelName ==  "Level 3")
+            {
+                gameCompletedPanel.SetActive(true);
+            }
+            else
+            {
+                LoadNextScene();
+            }
+        }
+    }
+}
