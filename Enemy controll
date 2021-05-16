@@ -1,0 +1,98 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+public class EnemyController : MonoBehaviour
+{
+
+    public enum EnemyType
+    {
+        Patrol,
+        Attack
+    }
+
+    public EnemyType type;
+
+    [Range(2f,10f)]
+    public float moveDistance;
+
+    private float speed = 2f;
+
+    //patrol
+    private bool isMoveLeft;
+    private float startX;
+    private SpriteRenderer spriteRenderer;
+    private Animator animator;
+
+    //attack
+    public float timer = 2f;
+    private float resetTimer = 2f;
+
+    public GameObject attackPrefab;
+    public Transform attackSpawnPoint;
+
+    // Start is called before the first frame update
+    void Start()
+    {
+        isMoveLeft = true;
+
+        spriteRenderer = GetComponent<SpriteRenderer>();
+        animator = GetComponent<Animator>();
+        spriteRenderer.flipX = true;
+
+        startX = transform.position.x;
+       
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+        if(type == EnemyType.Patrol)
+        {
+            animator.SetTrigger("Walk");
+
+            if (isMoveLeft)
+            {
+                if(transform.position.x >= (startX - moveDistance))
+                {
+                    transform.Translate(Vector2.left * speed * Time.deltaTime);
+                }
+                else
+                {
+                    isMoveLeft = false;
+                    spriteRenderer.flipX = false;
+                }
+            }
+            else
+            {
+                if (transform.position.x <= startX)
+                {
+                    transform.Translate(Vector2.right * speed * Time.deltaTime);
+                }
+                else
+                {
+                    isMoveLeft = true;
+                    spriteRenderer.flipX = true;
+                }
+            }
+        }
+        else if( type == EnemyType.Attack)
+        {
+            timer -= Time.deltaTime;
+
+            if(timer <= 0)
+            {
+                Instantiate(attackPrefab, attackSpawnPoint.position, Quaternion.identity);
+                animator.SetTrigger("Attack");
+                StartCoroutine(Idle());
+                timer = resetTimer;
+            }
+        }
+    }
+
+    IEnumerator Idle()
+    {
+        yield return new WaitForSeconds(0.65f);
+        animator.SetTrigger("Idle");
+    }
+}
