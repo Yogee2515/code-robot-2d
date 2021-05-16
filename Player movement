@@ -1,0 +1,148 @@
+using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.SceneManagement;
+
+public class PlayerMovement : MonoBehaviour
+{
+
+    public float speed;
+    public float jumpSpeed;
+    public float slideSpeed;
+
+    public Animator animator;
+    public SpriteRenderer spriteRenderer;
+    public Rigidbody2D rb2d;
+    public Collider2D col;
+
+    public GameObject bullet;
+    public Transform bulletSpawnPointR;
+    public Transform bulletSpawnPointL;
+
+    bool isPlayerDead;
+
+    bool canJump;
+    float jumpTimer = 2f;
+
+    bool gamePaused;
+    public GameObject pausePanel;
+    public GameObject gameOverPanel;
+
+    // Start is called before the first frame update
+    void Start()
+    {
+        canJump = true;
+        isPlayerDead = false;
+        gamePaused = false;
+        Time.timeScale = 1;
+    }
+
+    // Update is called once per frame
+    void Update()
+    {
+        if (isPlayerDead)
+            return;
+
+        float h = Input.GetAxis("Horizontal");
+        transform.Translate(Vector3.right * h * speed * Time.deltaTime);
+        animator.SetFloat("Run", Mathf.Abs(h));
+
+        if(h > 0)
+        {
+            spriteRenderer.flipX = false;
+        }
+        else if (h < 0)
+        {
+            spriteRenderer.flipX = true;
+        }
+
+        if(canJump && Input.GetKeyDown(KeyCode.Space))
+        {
+            rb2d.AddForce(Vector3.up * jumpSpeed, ForceMode2D.Impulse);
+            animator.SetTrigger("Jump");
+            canJump = false;
+        }
+
+        JumpErrorFix();
+
+        if (Input.GetKeyDown(KeyCode.LeftShift))
+        {
+            if (spriteRenderer.flipX)
+            {
+                rb2d.AddForce(Vector3.left * slideSpeed, ForceMode2D.Impulse);
+            }
+            else
+            {
+                rb2d.AddForce(Vector3.right * slideSpeed, ForceMode2D.Impulse);
+            }
+           
+            animator.SetTrigger("Slide");
+        }
+
+        if (Input.GetMouseButtonDown(0))
+        {
+            animator.SetTrigger("Shoot");
+
+            if (spriteRenderer.flipX)
+            {
+                GameObject _bullet = Instantiate(bullet, bulletSpawnPointL.position, Quaternion.identity);
+                _bullet.GetComponent<BulletController>().isFlip = true;
+            }
+            else
+            {
+                GameObject _bullet = Instantiate(bullet, bulletSpawnPointR.position, Quaternion.identity);
+                _bullet.GetComponent<BulletController>().isFlip = false;
+            }
+        }
+        
+    }
+
+    void JumpErrorFix()
+    {
+        if (!canJump)
+        {
+            jumpTimer -= Time.deltaTime;
+            if(jumpTimer <= 0)
+            {
+                canJump = true;
+                jumpTimer = 2f;
+            }
+        }
+    }
+
+    private void OnCollisionEnter2D(Collision2D collision)
+    {
+        if (collision.gameObject.CompareTag("Ground"))
+        {
+            canJump = true;
+        }
+
+        if (collision.gameObject.CompareTag("Enemy"))
+        {
+            Debug.Log("Hit Enemy");
+            animator.SetTrigger("Dead");
+            isPlayerDead = true;
+
+            rb2d.gravityScale = 0;
+            col.enabled = false;
+
+            gameOverPanel.SetActive(true);
+        }
+    }
+
+    public void PauseGame()
+    {
+        gamePaused = !gamePaused;
+        pausePanel.SetActive(gamePaused);
+
+        if (gamePaused)
+            Time.timeScale = 0;
+        else
+            Time.timeScale = 1;
+    }
+
+    public void RestartGame()
+    {
+        SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
+    }
+}
